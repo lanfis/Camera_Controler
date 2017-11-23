@@ -1,19 +1,18 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(camera_controler)
+project(platform_control)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+ add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  cv_bridge
-  image_transport
+  message_filters
   nodelet
   roscpp
-  rospy
   rostime
+  sensor_msgs
   std_msgs
 )
 
@@ -24,7 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-catkin_python_setup()
+# catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -74,7 +73,7 @@ catkin_python_setup()
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   std_msgs
+#   sensor_msgs#   std_msgs
 # )
 
 ################################################
@@ -102,14 +101,14 @@ catkin_python_setup()
 ###################################
 ## The catkin_package macro generates cmake config files for your package
 ## Declare things to be passed to dependent projects
-## INCLUDE_DIRS: uncomment this if your package contains header files
+## INCLUDE_DIRS: uncomment this if you package contains header files
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES camera_controler
-#  CATKIN_DEPENDS cv_bridge image_transport nodelet roscpp rospy rostime std_msgs
+#  LIBRARIES platform_control
+#  CATKIN_DEPENDS message_filters nodelet roscpp rostime sensor_msgs std_msgs
 #  DEPENDS system_lib
 )
 
@@ -122,11 +121,12 @@ catkin_package(
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
+  ../../include/
 )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/camera_controler.cpp
+#   src/${PROJECT_NAME}/platform_control.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -137,7 +137,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/camera_controler_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/platform_control_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -194,7 +194,7 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_camera_controler.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_platform_control.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
@@ -202,4 +202,6 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-catkin_install_python(PROGRAMS bin/camera_controler DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+add_executable(platform_control src/platform_control.cpp)
+target_link_libraries(platform_control ${catkin_LIBRARIES} ${OpenCV_INCLUDE_DIRS})
+add_dependencies(platform_control platform_control)

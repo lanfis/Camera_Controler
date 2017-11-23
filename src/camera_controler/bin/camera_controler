@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+# license removed for brevity
+import os
+import sys
+import rospy
+from std_msgs.msg import String
+
+full_path = os.path.realpath(__file__)
+current_folder, file_name = os.path.split(full_path)
+sys.path.append(current_folder)
+#sys.path.append(current_folder + "/../../../include")
+include_folder = os.path.realpath(current_folder+"/../../../include")
+sys.path.append(include_folder)
+sys.path.append(include_folder + "/matrix/python")
+from console_format import Console_Format
+from camera_driver.camera_driver import Camera_Driver
+
+
+if __name__ == '__main__':
+    nodeName = 'camera_controler'
+    rospy.loginfo("Initializing " + nodeName + " ...")
+    
+    rospy.init_node(nodeName, anonymous=True)
+    camera_controler = Camera_Driver()
+    camera_controler.flag_window = False
+    
+    rospy.loginfo(nodeName + " activating ok !")
+    
+    #while not rospy.is_shutdown():
+    camera_controler.run()
+
+    
+    rate = rospy.Rate(10)
+    while not rospy.is_shutdown():
+        camera_controler.run()
+        rate.sleep()
+   
+    #rospy.spin()
