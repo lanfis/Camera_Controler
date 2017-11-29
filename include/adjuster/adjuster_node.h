@@ -187,7 +187,7 @@ void Adjuster_Node::run()
     {
         move_vertical_publish();
         move_horizontal_publish();
-        cout << "yaw = " << yaw << ", pitch = " << pitch << endl;
+        cout << "find objects : " << adj.get_main_object_count() << " yaw = " << yaw << ", pitch = " << pitch << endl;
         //cout << adj.move_horizontal << "," << adj.move_vertical << endl;
         this -> roi_box.clear();
         if(pitch_fit & yaw_fit & !flag_capture)
@@ -272,10 +272,17 @@ void Adjuster_Node::move_vertical_publish()
         pitch_fit = true;
         return;
     }
-    else// if(abs(dest) < tor)
+    else if(abs(dest) < tor)
     {
-        //if(pitch_vect == 0) return;
         float spd = (!pitch_direct)? speed / pow(abs(pitch_vect)+eps, 0.5) : -1 * speed / pow(abs(pitch_vect)+eps, 0.5);
+        this -> pitch += (dest > 0)? spd : -1 * spd;     
+        this -> pitch = (this -> pitch > pitch_max)? pitch_max : this -> pitch;
+        this -> pitch = (this -> pitch < pitch_min)? pitch_min : this -> pitch;   
+        pitch_fit = false;
+    }
+    else
+    {
+        float spd = (!pitch_direct)? speed * pow(abs(pitch_vect)+eps, 0.5) : -1 * speed * pow(abs(pitch_vect)+eps, 0.5);
         this -> pitch += (dest > 0)? spd : -1 * spd;     
         this -> pitch = (this -> pitch > pitch_max)? pitch_max : this -> pitch;
         this -> pitch = (this -> pitch < pitch_min)? pitch_min : this -> pitch;   
@@ -298,10 +305,17 @@ void Adjuster_Node::move_horizontal_publish()
         yaw_fit = true;
         return;
     }
-    else// if(abs(dest) < tor)
+    else if(abs(dest) < tor)
     {
-        //if(yaw_vect == 0) return;
         float spd = (!yaw_direct)? speed / pow(abs(yaw_vect)+eps, 3) : -1 * speed / pow(abs(yaw_vect)+eps, 3);
+        this -> yaw += (dest > 0)? spd : -1 * spd;     
+        this -> yaw = (this -> yaw > yaw_max)? yaw_max : this -> yaw;
+        this -> yaw = (this -> yaw < yaw_min)? yaw_min : this -> yaw;  
+        yaw_fit = false; 
+    }
+    else
+    {
+        float spd = (!yaw_direct)? speed * pow(abs(yaw_vect)+eps, 5) : -1 * speed * pow(abs(yaw_vect)+eps, 5);
         this -> yaw += (dest > 0)? spd : -1 * spd;     
         this -> yaw = (this -> yaw > yaw_max)? yaw_max : this -> yaw;
         this -> yaw = (this -> yaw < yaw_min)? yaw_min : this -> yaw;  

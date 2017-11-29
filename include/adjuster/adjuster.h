@@ -28,6 +28,7 @@ class Adjuster
       int get_width(){return this -> width;};
       int get_height(){return this -> height;};
       void set_roi_target(vector<Rect>& rois){roi_target_ = rois;};
+      int get_main_object_count(){return this -> main_object_count_;}
 	  int move_horizontal = 0;
 	  int move_vertical = 0;
 	  int move_frwdback = 0;
@@ -41,7 +42,7 @@ class Adjuster
 	  float tor_frwdback_ratio_ = 0.01;
 	  vector<Rect> roi_target_;
 	  int main_object_count_ = 0;
-	  int tor_group_div_value_ = 19200;
+	  int tor_group_div_value_ = 10000;//160^2 - 100^2
 	  vector<float> ratio_line_ratio_;
 	  vector<Point> ratio_line_point_;
       
@@ -73,7 +74,7 @@ bool Adjuster::run(vector<Rect>& rois)
     this -> roi_target_ = rois;
     //cout << "Find object :";
     find_main_object(roi_target_, main_object_count_, tor_group_div_value_);    
-    cout << main_object_count_ << endl;
+    //cout << main_object_count_ << endl;
     //cout << "Making decision ..." << endl;
     return policy_decision();
 }
