@@ -1,0 +1,23 @@
+<launch>  
+  <node name="camera_controler" pkg="camera_controler" type="camera_controler" respawn="false" output="screen">
+  </node>
+  
+  <node name="vision_system" pkg="vision_system" type="vision_system" respawn="false" output="screen">
+      <!--<remap from="/Camera_Focus/image" to="/Camera_Controler/image_pub"/>-->
+      <!--<remap from="/Motion_Detector/image" to="/Camera_Controler/image_pub"/>-->
+      <remap from="/Face_Detector/image" to="/Camera_Controler/image_pub"/>
+      <!--<remap from="/Face_Detector/image" to="/Camera/image"/>-->
+  </node>
+  
+  <node name="adjuster" pkg="adjuster" type="adjuster" respawn="false" output="screen">
+      <remap from="/Adjuster_Node/target_roi" to="/Face_Detector/image_face"/>
+      <remap from="/Adjuster_Node/control_capture" to="/Camera_Controler/control_data_sub"/>
+  </node>
+  
+  <node name="platform_control" pkg="platform_control" type="platform_control" respawn="false" output="screen">
+      <remap from="/platform_control/cmd_yaw" to="/Adjuster_Node/move_yaw"/>
+      <remap from="/platform_control/cmd_pitch" to="/Adjuster_Node/move_pitch"/>
+      <remap from="/platform_control/platform_cmd" to="/ros_arduino_msgs"/>
+  </node>
+  
+</launch>

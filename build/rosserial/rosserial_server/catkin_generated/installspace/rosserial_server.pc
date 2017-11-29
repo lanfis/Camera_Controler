@@ -1,0 +1,8 @@
+prefix=/home/adel/Dropbox/Github/Camera_Controler/install
+
+Name: rosserial_server
+Description: Description of rosserial_server
+Version: 0.7.5
+Cflags: -I/home/adel/Dropbox/Github/Camera_Controler/install/include
+Libs: -L/home/adel/Dropbox/Github/Camera_Controler/install/lib 
+Requires: roscpp rosserial_msgs topic_tools

@@ -8,7 +8,7 @@
 #endif
 
 #define delayTime 20
-#define timeOut delayTime
+#define timeOut delayTime*2
 #define ROS_SERIAL_BAUD_RATE 57600
 #define ROS_RX_PIN 
 #define ROS_TX_PIN
@@ -34,11 +34,14 @@ Servo servo_yaw;  // create servo object to control a servo  // twelve servo obj
 Servo servo_pitch;
 int servo_ms_yaw = 1500;
 int servo_ms_pitch = 1500;
+int servo_ms_yaw_new = 1500;
+int servo_ms_pitch_new = 1500;
 #define SERVO_MS_YAW_MIN  700+10
 #define SERVO_MS_YAW_MAX  2300-10
 #define SERVO_MS_PITCH_MIN  700+10
 #define SERVO_MS_PITCH_MAX  2300-10
 #define SERVO_MS_TOR  10//torlerance
+#define SERVO_MS_SPEED 2
 #define PLATFORM_CONTROL_HEADER "PC"
 #define PLATFORM_CONTROL_YAW "Y"
 #define PLATFORM_CONTROL_PITCH "P"
@@ -115,6 +118,7 @@ void loop()
 //    rosPub(str);
   nh.spinOnce();
   delay(delayTime);
+  digitalWrite(13, HIGH);
 }
 
 
@@ -164,7 +168,7 @@ bool platform_command_analysis(String& cmd)
 		    ms_yaw = (tmp.toInt() < SERVO_MS_YAW_MIN)? servo_ms_yaw : tmp.toInt();
 		    ms_yaw = (tmp.toInt() > SERVO_MS_YAW_MAX)? servo_ms_yaw : tmp.toInt();
   	    if(abs(ms_yaw - servo_ms_yaw) > SERVO_MS_TOR)
-    	    servo_ms_yaw = ms_yaw;
+    	    servo_ms_yaw_new = ms_yaw;
       }
         
       if(Option == PLATFORM_CONTROL_PITCH)
@@ -173,7 +177,7 @@ bool platform_command_analysis(String& cmd)
 		    ms_pitch = (tmp.toInt() < SERVO_MS_PITCH_MIN)? servo_ms_pitch : tmp.toInt();
 		    ms_pitch = (tmp.toInt() > SERVO_MS_PITCH_MAX)? servo_ms_pitch : tmp.toInt();
 	      if(abs(ms_pitch - servo_ms_pitch) > SERVO_MS_TOR)
-      	  servo_ms_pitch = ms_pitch;
+      	  servo_ms_pitch_new = ms_pitch;
       }
     }
     //rosPub(tmp);
@@ -184,10 +188,30 @@ bool platform_command_analysis(String& cmd)
 
 void platform_run()
 {
-  servo_yaw.writeMicroseconds(servo_ms_yaw);
-  servo_pitch.writeMicroseconds(servo_ms_pitch);
-  delay(delayTime);
-  digitalWrite(13, HIGH);
+  bool flag_yaw_reach = (servo_ms_yaw == servo_ms_yaw_new)? true : false;
+  bool flag_pitch_reach = (servo_ms_pitch == servo_ms_pitch_new)? true : false;
+  while(!(flag_yaw_reach & flag_pitch_reach))
+  {
+    digitalWrite(13, LOW);
+    if(servo_ms_yaw_new > servo_ms_yaw)
+      servo_ms_yaw = (servo_ms_yaw + SERVO_MS_SPEED) > servo_ms_yaw_new ? servo_ms_yaw_new : (servo_ms_yaw + SERVO_MS_SPEED);
+    else if(servo_ms_yaw_new < servo_ms_yaw)
+      servo_ms_yaw = (servo_ms_yaw - SERVO_MS_SPEED) < servo_ms_yaw_new ? servo_ms_yaw_new : (servo_ms_yaw - SERVO_MS_SPEED);
+    else
+      flag_yaw_reach = true;
+      
+    if(servo_ms_pitch_new > servo_ms_pitch)
+      servo_ms_pitch = (servo_ms_pitch + SERVO_MS_SPEED) > servo_ms_pitch_new ? servo_ms_pitch_new : (servo_ms_pitch + SERVO_MS_SPEED);
+    else if(servo_ms_pitch_new < servo_ms_pitch)
+      servo_ms_pitch = (servo_ms_pitch - SERVO_MS_SPEED) < servo_ms_pitch_new ? servo_ms_pitch_new : (servo_ms_pitch - SERVO_MS_SPEED);
+    else
+      flag_pitch_reach = true;
+    
+    servo_yaw.writeMicroseconds(servo_ms_yaw);
+    servo_pitch.writeMicroseconds(servo_ms_pitch);
+    delay(delayTime/2);
+    digitalWrite(13, HIGH);
+  }
   return;
 }
 /*

@@ -1,0 +1,6 @@
+set(camera_controler_SETUP_PY_VERSION "0.0.0")
+set(camera_controler_SETUP_PY_SCRIPTS "")
+set(camera_controler_SETUP_PY_PACKAGES "")
+set(camera_controler_SETUP_PY_PACKAGE_DIRS "")
+set(camera_controler_SETUP_PY_MODULES "")
+set(camera_controler_SETUP_PY_MODULE_DIRS "")

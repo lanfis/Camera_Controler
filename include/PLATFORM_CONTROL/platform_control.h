@@ -90,6 +90,8 @@ class Platform_Control
 	float cmd_yaw_ = 0;
 	float cmd_pitch_ = 0;
 	string platform_status;
+	bool flag_yaw_update = false;
+	bool flag_pitch_update = false;
 
   public:
     Platform_Control(ros::NodeHandle& nh);
@@ -117,6 +119,7 @@ class Platform_Control
 
 Platform_Control::Platform_Control(ros::NodeHandle& nh) : n_(nh)
 { 
+    sub_init();
 }
 
 Platform_Control::~Platform_Control()
@@ -133,21 +136,31 @@ void Platform_Control::run()
 void Platform_Control::platform_cmd_publish()
 {
 	std_msgs::String msg;
-	string platform_cmd_yaw = HEADER  YAW;
-	string platform_cmd_pitch = HEADER  PITCH;
-	int value_yaw = cmd_yaw_ * float(ANG_MS_MAX - ANG_MS_MIN) + float(ANG_MS_MIN);
-	int value_pitch = cmd_pitch_ * float(ANG_MS_MAX - ANG_MS_MIN) + float(ANG_MS_MIN);
 	stringstream token;
 	string str;
-	token << value_yaw;
-	token >> str;
-	platform_cmd_yaw = platform_cmd_yaw + str;
-	token.clear();
-	token << value_pitch;
-	token >> str;
-	platform_cmd_pitch = platform_cmd_pitch + str;
-	msg.data = platform_cmd_yaw + " " + platform_cmd_pitch;
-	platform_control_platform_cmd_pub_.publish(msg);
+	if(flag_yaw_update)
+	{
+    	string platform_cmd_yaw = HEADER  YAW;
+    	int value_yaw = cmd_yaw_ * float(ANG_MS_MAX - ANG_MS_MIN) + float(ANG_MS_MIN);
+    	token << value_yaw;
+    	token >> str;
+    	platform_cmd_yaw = platform_cmd_yaw + str;
+    	token.clear();
+    	msg.data = platform_cmd_yaw;
+    	platform_control_platform_cmd_pub_.publish(msg);
+    	flag_yaw_update = false;
+	}
+	if(flag_pitch_update)
+	{
+	    string platform_cmd_pitch = HEADER  PITCH;
+    	int value_pitch = cmd_pitch_ * float(ANG_MS_MAX - ANG_MS_MIN) + float(ANG_MS_MIN);
+	    token << value_pitch;
+    	token >> str;
+    	platform_cmd_pitch = platform_cmd_pitch + str;
+    	msg.data = platform_cmd_pitch;
+    	platform_control_platform_cmd_pub_.publish(msg);
+    	flag_pitch_update = false;
+	}
 }
 
 void Platform_Control::platform_status_callBack(const std_msgs::String::ConstPtr& msg)
@@ -159,12 +172,16 @@ void Platform_Control::command_yaw_callBack(const std_msgs::Float32::ConstPtr& m
 { 
     cmd_yaw_ = (msg -> data > 1)? 1.0 : msg -> data;
     cmd_yaw_ = (cmd_yaw_ < 0)? 0 : cmd_yaw_;
+    flag_yaw_update = true;
+    platform_cmd_publish();
 }
 
 void Platform_Control::command_pitch_callBack(const std_msgs::Float32::ConstPtr& msg)
 {
     cmd_pitch_ = (msg -> data > 1)? 1.0 : msg -> data;
     cmd_pitch_ = (cmd_pitch_ < 0)? 0 : cmd_pitch_;
+    flag_pitch_update = true;
+    platform_cmd_publish();
 }
 
 void Platform_Control::pub_topic_get()

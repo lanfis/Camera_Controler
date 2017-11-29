@@ -1,0 +1,8 @@
+prefix=/home/adel/Dropbox/Github/Camera_Controler/install
+
+Name: camera_controler
+Description: Description of camera_controler
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/adel/Dropbox/Github/Camera_Controler/install/lib 
+Requires: 

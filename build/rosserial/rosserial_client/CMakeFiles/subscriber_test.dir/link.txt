@@ -1,0 +1,1 @@
+/usr/bin/c++      CMakeFiles/subscriber_test.dir/test/subscriber_test.cpp.o  -o /home/adel/Dropbox/Github/Camera_Controler/devel/lib/rosserial_client/subscriber_test  -L/home/adel/Dropbox/Github/Camera_Controler/build/gtest -rdynamic ../../gtest/libgtest.so -lpthread -Wl,-rpath,/home/adel/Dropbox/Github/Camera_Controler/build/gtest 

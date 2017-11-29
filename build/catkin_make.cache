@@ -1,0 +1,2 @@
+adjuster:camera_controler:platform_control:rosserial/rosserial:rosserial/rosserial_arduino:rosserial/rosserial_client:rosserial/rosserial_embeddedlinux:rosserial/rosserial_mbed:rosserial/rosserial_msgs:rosserial/rosserial_python:rosserial/rosserial_server:rosserial/rosserial_test:rosserial/rosserial_tivac:rosserial/rosserial_windows:rosserial/rosserial_xbee:vision_system
+-DCATKIN_DEVEL_PREFIX=/home/adel/Dropbox/Github/Camera_Controler/devel -DCMAKE_INSTALL_PREFIX=/home/adel/Dropbox/Github/Camera_Controler/install -G Unix Makefiles

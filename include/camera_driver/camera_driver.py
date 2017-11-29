@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # license removed for brevity
+import time
 import os
 import sys
 sys.path.append(os.path.expanduser("~"))
@@ -26,15 +27,19 @@ class Camera_Driver:
     node_name = "Camera_Controler"
     topic_image_pub = node_name + "/image_pub"
     topic_control_data_sub = node_name + "/control_data_sub"
-    temp_folder = current_folder
+    temp_folder = os.path.join(current_folder, "DCIM")
     preview_data_name = "preview.jpg"
-    image_data_name = "image.jpg"
+    image_data_name = "image"
+    image_data_idx = 1
+    image_data_name_postifx = ".jpg"
+    time_shoot_pic = 3
     
     flag_window = False
     
     ##PRIVATE:
     camera_handler = pphoto.camera(autoInit=False)
     is_init = False
+    is_capture = False
     image = None
     control_data = ""
     image_folder = ""
@@ -46,8 +51,9 @@ class Camera_Driver:
     control_data_sub_ = None
     
     def run(self):
-        self.preview()
-        self.image_publish()
+        if not self.is_capture:
+            self.preview()
+            self.image_publish()
     
     def abilities(self):
         return self.camera_handler.abilities
@@ -68,14 +74,18 @@ class Camera_Driver:
         return path
         
     def capture(self, download_path=None):
-        path = download_path
+        path = os.path.join(self.temp_folder, "{}_{}{}".format(self.image_data_name, self.image_data_idx, self.image_data_name_postifx)) if download_path is None else download_path
         OUT.INFO(self.node_name, "Capturing image ...")
         if download_path is None:
+            '''
             self.image_folder, self.image_name = self.camera_handler.capture_image()
             path = os.path.join(self.image_folder, self.image_name)
+            '''
+            self.camera_handler.capture_image(destpath=path)
         else:
-            self.camera_handler.capture_image(destpath=download_path)
+            self.camera_handler.capture_image(destpath=path)
         OUT.INFO(self.node_name, "Capturing image ok ! Saving data in : {}".format(path))
+        self.image_data_idx += 1
     
     def exit(self):
         self.camera_handler.exit()
@@ -86,12 +96,19 @@ class Camera_Driver:
             cv2.imshow(self.node_name, self.image)
             cv2.waitKey(1)
         
-    def control_data_callback(self, data):
-        self.control_data = data.data
+    def control_data_callback(self, msg):
+        self.control_data = msg.data
         
         if self.control_data == "preview":
             self.preview()
             self.image_publish()
+        if self.control_data == "capture":
+            if self.is_capture:
+                return
+            self.is_capture = True
+            self.capture()
+            time.sleep(self.time_shoot_pic)
+            self.is_capture = False
 
     def pub_init(self):
         OUT.INFO(self.node_name, "Publisher {} initiating !".format(self.topic_image_pub))
@@ -102,6 +119,8 @@ class Camera_Driver:
         self.control_data_sub = rospy.Subscriber(self.topic_control_data_sub, String, self.control_data_callback)
 
     def init(self):
+        if not os.path.exists(self.temp_folder):
+            os.makedirs(self.temp_folder)
         if self.is_init:
             OUT.INFO(self.node_name, "Reinitializing camera handler ...")            
             self.camera_handler.reinit()
