@@ -2,6 +2,7 @@
 #ifndef _ADJUSTER_NODE_H_
 #define _ADJUSTER_NODE_H_
 
+#include <ctime>
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
 #include <image_transport/image_transport.h>
@@ -104,6 +105,9 @@ class Adjuster_Node// : public nodelet::Nodelet
     void control_publish();
     
   private:
+    time_t past_time;
+    time_t current_time;
+    double duration_time_min = 1;
     Adjuster adj;
     vector<Rect> roi_box;
     float delay_time = 1;
@@ -111,9 +115,14 @@ class Adjuster_Node// : public nodelet::Nodelet
     int count_down = ready_count;
     int width = 640;
     int height = 480;
-    float speed = 0.005;
-    float tor   = 0.005;
+    float speed = 1;
+    float tor   = 0.000005;
+    float spd_pitch = 0;
+    float spd_yaw = 0;
+    float inc_rate_pitch = speed / (float)(height) * 2;
+    float inc_rate_yaw = speed / (float)(width) * 2;
     float eps   = 1.0;
+    float damping_v = 1000.0;
     
     float pitch_min = 0.3;
     float pitch_max = 0.7;
@@ -127,6 +136,10 @@ class Adjuster_Node// : public nodelet::Nodelet
     float yaw_vect = 0;
     float pitch_vect_old = 0;
     float yaw_vect_old = 0;
+    float dest_vertical = 0;
+    float dest_vertical_old = 0;
+    float dest_horizontal = 0;
+    float dest_horizontal_old = 0;
     bool pitch_direct = true;
     bool yaw_direct = true;
     bool pitch_fit = false;
@@ -185,10 +198,17 @@ void Adjuster_Node::run()
     }
     if(adj.run(this -> roi_box))
     {
+        current_time = time(NULL);
+        if(difftime(current_time, past_time) > duration_time_min)
+        {
+            spd_yaw = 0;
+            spd_pitch = 0;
+            yaw_vect_old = 0;
+            pitch_vect_old = 0;
+        }
         move_vertical_publish();
         move_horizontal_publish();
         cout << "find objects : " << adj.get_main_object_count() << " yaw = " << yaw << ", pitch = " << pitch << endl;
-        //cout << adj.move_horizontal << "," << adj.move_vertical << endl;
         this -> roi_box.clear();
         if(pitch_fit & yaw_fit & !flag_capture)
         {
@@ -209,6 +229,7 @@ void Adjuster_Node::run()
             flag_capture = false;
             count_down = ready_count;
         }
+        past_time = current_time;
     }
 }
 
@@ -255,6 +276,7 @@ void Adjuster_Node::target_roi_callBack(const sensor_msgs::RegionOfInterest::Con
 
 void Adjuster_Node::control_publish()
 {
+    cout << "Capturing ...\n";
     std_msgs::String msg;
     msg.data = "capture";
     control_pub_.publish(msg);
@@ -263,31 +285,28 @@ void Adjuster_Node::control_publish()
 void Adjuster_Node::move_vertical_publish()
 {
     std_msgs::Float32 msg;
-    float dest = (float)(adj.move_vertical)/(float)(height)*2;
-    pitch_vect_old = pitch_vect;
-    pitch_vect = this -> pitch - this -> pitch_old;
-    pitch_direct = (abs(pitch_vect) > abs(pitch_vect_old))? !pitch_direct : pitch_direct;
-    if(abs(dest) < tor / 4)
+    dest_vertical_old = dest_vertical;
+    dest_vertical = (float)(adj.move_vertical)/(float)(height)*2;
+    //pitch_vect_old = pitch_vect;
+    //pitch_vect = this -> pitch - this -> pitch_old;
+    //pitch_direct = (abs(dest_vertical) > abs(dest_vertical_old))? !pitch_direct : pitch_direct;
+    if(abs(dest_vertical) < tor / 5)
     {
         pitch_fit = true;
+        spd_pitch = 0;
         return;
-    }
-    else if(abs(dest) < tor)
-    {
-        float spd = (!pitch_direct)? speed / pow(abs(pitch_vect)+eps, 0.5) : -1 * speed / pow(abs(pitch_vect)+eps, 0.5);
-        this -> pitch += (dest > 0)? spd : -1 * spd;     
-        this -> pitch = (this -> pitch > pitch_max)? pitch_max : this -> pitch;
-        this -> pitch = (this -> pitch < pitch_min)? pitch_min : this -> pitch;   
-        pitch_fit = false;
     }
     else
     {
-        float spd = (!pitch_direct)? speed * pow(abs(pitch_vect)+eps, 0.5) : -1 * speed * pow(abs(pitch_vect)+eps, 0.5);
-        this -> pitch += (dest > 0)? spd : -1 * spd;     
+        spd_pitch += inc_rate_pitch;
+        spd_pitch = (spd_pitch > speed)? speed : spd_pitch;
+        spd_pitch = (spd_pitch < -1*speed)? -1*speed : spd_pitch;//useless ??
+        this -> pitch += (pitch_direct)? -1 * dest_vertical * spd_pitch : dest_vertical * spd_pitch;// / (pow(damping_v*pitch_vect, 2) +eps); 
         this -> pitch = (this -> pitch > pitch_max)? pitch_max : this -> pitch;
-        this -> pitch = (this -> pitch < pitch_min)? pitch_min : this -> pitch;   
+        this -> pitch = (this -> pitch < pitch_min)? pitch_min : this -> pitch; 
         pitch_fit = false;
     }
+    
     this -> pitch_old = this -> pitch;
     msg.data = this -> pitch;
     move_vertical_pub_.publish(msg);
@@ -296,31 +315,27 @@ void Adjuster_Node::move_vertical_publish()
 void Adjuster_Node::move_horizontal_publish()
 {
     std_msgs::Float32 msg;
-    float dest = (float)(adj.move_horizontal)/(float)(width)*2;
-    yaw_vect_old = yaw_vect;
-    yaw_vect = this -> yaw - this -> yaw_old;
-    yaw_direct = (abs(yaw_vect) > abs(yaw_vect_old))? !yaw_direct : yaw_direct;
-    if(abs(dest) < tor / 4)
+    dest_horizontal_old = dest_horizontal;
+    dest_horizontal = (float)(adj.move_horizontal)/(float)(width)*2;
+    //yaw_vect_old = yaw_vect;
+    //yaw_vect = this -> yaw - this -> yaw_old;
+    //yaw_direct = (abs(yaw_vect) > abs(yaw_vect_old))? !yaw_direct : yaw_direct;
+    if(abs(dest_horizontal) < tor / 5)
     {
         yaw_fit = true;
+        spd_yaw = 0;
         return;
-    }
-    else if(abs(dest) < tor)
-    {
-        float spd = (!yaw_direct)? speed / pow(abs(yaw_vect)+eps, 3) : -1 * speed / pow(abs(yaw_vect)+eps, 3);
-        this -> yaw += (dest > 0)? spd : -1 * spd;     
-        this -> yaw = (this -> yaw > yaw_max)? yaw_max : this -> yaw;
-        this -> yaw = (this -> yaw < yaw_min)? yaw_min : this -> yaw;  
-        yaw_fit = false; 
     }
     else
     {
-        float spd = (!yaw_direct)? speed * pow(abs(yaw_vect)+eps, 5) : -1 * speed * pow(abs(yaw_vect)+eps, 5);
-        this -> yaw += (dest > 0)? spd : -1 * spd;     
+        spd_yaw += inc_rate_yaw;
+        spd_yaw = (spd_yaw > speed)? speed : spd_yaw;
+        spd_yaw = (spd_yaw < -1*speed)? -1*speed : spd_yaw;//useless ??
+        this -> yaw += (yaw_direct)? -1 * dest_horizontal * spd_yaw : dest_horizontal * spd_yaw;// / (pow(damping_v*yaw_vect, 2) +eps);
         this -> yaw = (this -> yaw > yaw_max)? yaw_max : this -> yaw;
-        this -> yaw = (this -> yaw < yaw_min)? yaw_min : this -> yaw;  
-        yaw_fit = false; 
-    }    
+        this -> yaw = (this -> yaw < yaw_min)? yaw_min : this -> yaw;   
+        yaw_fit = false;
+    }
     this -> yaw_old = this -> yaw;
     msg.data = this -> yaw;
     move_horizontal_pub_.publish(msg);

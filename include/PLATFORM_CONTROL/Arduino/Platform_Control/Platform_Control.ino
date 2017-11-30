@@ -40,8 +40,8 @@ int servo_ms_pitch_new = 1500;
 #define SERVO_MS_YAW_MAX  2300-10
 #define SERVO_MS_PITCH_MIN  700+10
 #define SERVO_MS_PITCH_MAX  2300-10
-#define SERVO_MS_TOR  10//torlerance
-#define SERVO_MS_SPEED 2
+#define SERVO_MS_TOR  2//torlerance
+#define SERVO_MS_SPEED 10
 #define PLATFORM_CONTROL_HEADER "PC"
 #define PLATFORM_CONTROL_YAW "Y"
 #define PLATFORM_CONTROL_PITCH "P"

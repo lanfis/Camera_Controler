@@ -1,12 +1,12 @@
 <launch>  
-  <node name="camera_controler" pkg="camera_controler" type="camera_controler" respawn="false" output="screen">
-  </node>
+  <!--<node name="camera_controler" pkg="camera_controler" type="camera_controler" respawn="false" output="screen">
+  </node>-->
   
   <node name="vision_system" pkg="vision_system" type="vision_system" respawn="false" output="screen">
       <!--<remap from="/Camera_Focus/image" to="/Camera_Controler/image_pub"/>-->
       <!--<remap from="/Motion_Detector/image" to="/Camera_Controler/image_pub"/>-->
-      <remap from="/Face_Detector/image" to="/Camera_Controler/image_pub"/>
-      <!--<remap from="/Face_Detector/image" to="/Camera/image"/>-->
+      <!--<remap from="/Face_Detector/image" to="/Camera_Controler/image_pub"/>-->
+      <remap from="/Face_Detector/image" to="/Camera/image"/>
   </node>
   
   <node name="adjuster" pkg="adjuster" type="adjuster" respawn="false" output="screen">

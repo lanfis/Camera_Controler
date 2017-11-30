@@ -36,10 +36,12 @@ class Adjuster
     private:
       int width = 640;
       int height = 480;
+      float up_line_ratio = 0.4;
+      float down_line_ratio = 0.6;
       
-	  float tor_horizontal_ratio_ = 0.01;
-	  float tor_vertical_ratio_ = 0.01;
-	  float tor_frwdback_ratio_ = 0.01;
+	  float tor_horizontal_ratio_ = 0.00001;
+	  float tor_vertical_ratio_ = 0.00001;
+	  float tor_frwdback_ratio_ = 0.00001;
 	  vector<Rect> roi_target_;
 	  int main_object_count_ = 0;
 	  int tor_group_div_value_ = 10000;//160^2 - 100^2
@@ -59,8 +61,8 @@ class Adjuster
 
 Adjuster::Adjuster()
 {
-	ratio_line_ratio_.push_back(0.4);
-	ratio_line_ratio_.push_back(0.6);
+	ratio_line_ratio_.push_back(up_line_ratio);
+	ratio_line_ratio_.push_back(down_line_ratio);
 	ratio_line_point_set();
 }
 
@@ -94,7 +96,7 @@ bool Adjuster::policy_decision()
     }
     if(main_object_count_ > roi_target_.size())
         return false;
-    
+    /*
     if(main_object_count_ % 2 == 0)
     {
         move_horizontal = (abs(ratio_line_point_[1].x - (roi_target_[0].x + roi_target_[1].x) / 2) > width * tor_horizontal_ratio_)?
@@ -105,12 +107,30 @@ bool Adjuster::policy_decision()
     }    
     if(main_object_count_ % 2 == 1)
     {
-        move_horizontal = (abs(ratio_line_point_[1].x - roi_target_[0].x) > width * tor_horizontal_ratio_)?
-                            ratio_line_point_[1].x - roi_target_[0].x : 0;
-        move_vertical =   (abs(ratio_line_point_[1].y - roi_target_[0].y) > height * tor_vertical_ratio_)?
-                            ratio_line_point_[1].y - roi_target_[0].y : 0;
+        move_horizontal = (abs(ratio_line_point_[1].x - (roi_target_[0].x + roi_target_[roi_target_.size()-1].x)/2)) > width * tor_horizontal_ratio_?
+                            ratio_line_point_[1].x - (roi_target_[0].x + roi_target_[roi_target_.size()-1].x)/2 : 0;
+        move_vertical =   (abs(ratio_line_point_[1].y - (roi_target_[0].y + roi_target_[roi_target_.size()-1].y)/2)) > height * tor_vertical_ratio_?
+                            ratio_line_point_[1].y - (roi_target_[0].y + roi_target_[roi_target_.size()-1].y)/2 : 0;
         return true;
     }
+    */
+    int margin_left = roi_target_[0].x;
+    int margin_right = roi_target_[0].x;
+    int margin_top = roi_target_[0].y;
+    int margin_bottom = roi_target_[0].y;
+    for(int i = 0; i < roi_target_.size(); i++)
+    {
+        margin_left =  (margin_left < roi_target_[i].x)?  margin_left  : roi_target_[i].x;
+        margin_right = (margin_right > roi_target_[i].x)? margin_right : roi_target_[i].x;
+        margin_top =   (margin_top < roi_target_[i].y)?   margin_top   : roi_target_[i].y;
+        margin_bottom= (margin_bottom > roi_target_[i].y)?margin_bottom: roi_target_[i].y;
+    }
+    
+    move_horizontal = (abs(ratio_line_point_[1].x - (margin_left + margin_right)/2)) > width * tor_horizontal_ratio_?
+                    ratio_line_point_[1].x - (margin_left + margin_right)/2 : 0;
+    move_vertical =   (abs(ratio_line_point_[1].y - (margin_top + margin_bottom)/2)) > height * tor_vertical_ratio_?
+                    ratio_line_point_[1].y - (margin_top + margin_bottom)/2 : 0;
+    return true;    
 }
 
 void Adjuster::find_main_object(vector<Rect>& region, int& count, int& div_value)
